@@ -4,8 +4,11 @@ import org.gotson.komga.domain.persistence.MediaRepository
 import org.gotson.komga.domain.service.BookAnalyzer
 import org.gotson.komga.infrastructure.image.ImageConverter
 import org.gotson.komga.infrastructure.image.ImageType
+import org.gotson.komga.interfaces.api.dto.MEDIATYPE_OPDS_AUTHENTICATION_JSON_VALUE
 import org.gotson.komga.interfaces.api.dto.MEDIATYPE_OPDS_JSON_VALUE
 import org.gotson.komga.interfaces.api.dto.MEDIATYPE_OPDS_PUBLICATION_JSON
+import org.gotson.komga.interfaces.api.dto.MEDIATYPE_PROGRESSION_JSON_VALUE
+import org.gotson.komga.interfaces.api.dto.REL_PROGRESSION_API
 import org.gotson.komga.interfaces.api.dto.WPLinkDto
 import org.gotson.komga.interfaces.api.dto.WPPublicationDto
 import org.gotson.komga.interfaces.api.opds.v2.ROUTE_AUTH
@@ -25,7 +28,9 @@ class OpdsGenerator(
   imageConverter: ImageConverter,
   bookAnalyzer: BookAnalyzer,
   mediaRepository: MediaRepository,
-) : WebPubGenerator(thumbnailType, imageConverter, bookAnalyzer, mediaRepository, listOf("opds", "v2")) {
+) : WebPubGenerator(thumbnailType, imageConverter, bookAnalyzer, mediaRepository) {
+  override val pathSegments = listOf("opds", "v2")
+
   fun toOpdsPublicationDto(bookDto: BookDto): WPPublicationDto =
     toBasePublicationDto(bookDto).copy(images = buildThumbnailLinkDtos(bookDto.id))
 
@@ -39,9 +44,31 @@ class OpdsGenerator(
       ),
     )
 
+  override fun getExtraLinkProperties(): Map<String, Map<String, Any>> =
+    mapOf(
+      "authenticate" to
+        mapOf(
+          "href" to ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment(*pathSegments.toTypedArray()).path(ROUTE_AUTH).toUriString(),
+          "type" to MEDIATYPE_OPDS_AUTHENTICATION_JSON_VALUE,
+        ),
+    )
+
+  override fun getExtraLinks(bookId: String): List<WPLinkDto> {
+    return buildList {
+      add(
+        WPLinkDto(
+          type = MEDIATYPE_PROGRESSION_JSON_VALUE,
+          rel = REL_PROGRESSION_API,
+          href = ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment(*pathSegments.toTypedArray()).path("books/$bookId/progression").toUriString(),
+          properties = getExtraLinkProperties(),
+        ),
+      )
+    }
+  }
+
   fun generateOpdsAuthDocument() =
     AuthenticationDocumentDto(
-      id = ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment("opds", "v2").path(ROUTE_AUTH).toUriString(),
+      id = ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment(*pathSegments.toTypedArray()).path(ROUTE_AUTH).toUriString(),
       title = "Komga",
       description = "Enter your email and password to authenticate.",
       links =
