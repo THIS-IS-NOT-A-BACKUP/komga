@@ -177,6 +177,8 @@
     "outdated_tooltip": "The file for this book has changed, this book must be re-analyzed",
     "read_book": "Read book",
     "read_incognito": "Read incognito",
+    "remove_from_collection": "Remove book from collection",
+    "remove_from_readlist": "Remove book from read list",
     "size": "SIZE"
   },
   "browse_collection": {
@@ -191,6 +193,7 @@
   },
   "browse_series": {
     "earliest_year_from_release_dates": "This is the earliest year from the release dates from all books in the series",
+    "remove_from_collection": "Remove series from collection",
     "series_no_summary": "This series has no summary, so we picked one for you!",
     "summary_from_book": "Summary from book {number}:"
   },
@@ -283,6 +286,7 @@
     "comicrack_preambule_html": "You can import existing ComicRack Reading Lists in <code>.cbl</code> format.<br/>Komga will try to match the provided series and book number with series and books in your libraries.",
     "dialog_confirmation": {
       "body": "{unmatched} / {total} books are unmatched",
+      "body2": "{duplicates} / {total} books are duplicated",
       "create": "Create anyway",
       "title": "Some books are not matched"
     },
@@ -804,6 +808,7 @@
   "filter": {
     "age_rating": "age rating",
     "age_rating_none": "None",
+    "any": "Any",
     "complete": "Complete",
     "genre": "genre",
     "in_progress": "In Progress",
@@ -887,6 +892,9 @@
     "tasks_executed": "Tasks executed",
     "tasks_total_time": "Tasks total time",
     "title": "Metrics"
+  },
+  "missing_posters": {
+    "title": "Missing Posters"
   },
   "navigation": {
     "home": "Home",
