@@ -226,7 +226,7 @@
 
               <v-row v-if="book.metadata.summary">
                 <v-col>
-                  <read-more>{{ book.metadata.summary }}</read-more>
+                  <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
                 </v-col>
               </v-row>
             </template>
@@ -272,7 +272,7 @@
 
         <v-row v-if="book.metadata.summary">
           <v-col>
-            <read-more>{{ book.metadata.summary }}</read-more>
+            <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
           </v-col>
         </v-row>
       </template>
@@ -365,6 +365,7 @@
           <v-chip
             v-for="(link, i) in book.metadata.links"
             :href="link.url"
+            rel="noreferrer"
             target="_blank"
             class="me-2"
             label
@@ -410,6 +411,28 @@
         <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{ book.url }}</v-col>
       </v-row>
 
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_created') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.created))
+          }}
+        </v-col>
+      </v-row>
+
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_modified') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.lastModified))
+          }}
+        </v-col>
+      </v-row>
+
     </v-container>
 
   </div>
@@ -447,7 +470,7 @@ import RtlIcon from '@/components/RtlIcon.vue'
 import {BookSseDto, LibrarySseDto, ReadListSseDto, ReadProgressSseDto} from '@/types/komga-sse'
 import {RawLocation} from 'vue-router/types/router'
 import {ReadListDto} from '@/types/komga-readlists'
-import {SearchConditionSeriesId, SearchConditionTag, SearchOperatorIs} from '@/types/komga-search'
+import {BookSearch, SearchConditionSeriesId, SearchConditionTag, SearchOperatorIs} from '@/types/komga-search'
 
 export default Vue.extend({
   name: 'BrowseBook',
@@ -464,6 +487,7 @@ export default Vue.extend({
       siblingPrevious: {} as BookDto,
       siblingNext: {} as BookDto,
       readLists: [] as ReadListDto[],
+      readMore: false,
     }
   },
   async created() {
@@ -495,6 +519,7 @@ export default Vue.extend({
   },
   async beforeRouteUpdate(to, from, next) {
     if (to.params.bookId !== from.params.bookId) {
+      this.readMore = false
       this.loadBook(to.params.bookId)
     }
 
@@ -627,7 +652,7 @@ export default Vue.extend({
       } else {
         this.$komgaBooks.getBooksList({
           condition: new SearchConditionSeriesId(new SearchOperatorIs(this.book.seriesId)),
-        } as BookSearch, {unpaged: true, sort: 'metadata.numberSort'})
+        } as BookSearch, {unpaged: true, sort: ['metadata.numberSort']})
           .then(v => this.siblings = v.content)
       }
 
@@ -635,7 +660,7 @@ export default Vue.extend({
         .then(v => this.readLists = v)
 
       if (this.$_.has(this.book, 'metadata.title')) {
-        document.title = `Komga - ${getBookTitleCompact(this.book.metadata.title, this.book.seriesTitle)}`
+        document.title = `Komga - ${getBookTitleCompact(this.book.metadata.title, this.book.seriesTitle, this.book.oneshot ? undefined : this.book.metadata.number)}`
       }
 
       if (this?.context.origin === ContextOrigin.READLIST) {

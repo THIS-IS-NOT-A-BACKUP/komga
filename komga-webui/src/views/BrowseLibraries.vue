@@ -4,6 +4,7 @@
       <!--   Action menu   -->
       <library-actions-menu v-if="library"
                             :library="library"/>
+      <libraries-actions-menu v-else/>
 
       <v-toolbar-title>
         <span>{{ library ? library.name : $t('common.all_libraries') }}</span>
@@ -167,7 +168,7 @@ import {ItemContext} from '@/types/items'
 import {
   BookSearch,
   SearchConditionAgeRating,
-  SearchConditionAllOfSeries,
+  SearchConditionAllOfSeries, SearchConditionAnyOfBook,
   SearchConditionAnyOfSeries,
   SearchConditionAuthor,
   SearchConditionComplete,
@@ -207,10 +208,12 @@ import {
   FiltersOptions,
   NameValue,
 } from '@/types/filter'
+import LibrariesActionsMenu from '@/components/menus/LibrariesActionsMenu.vue'
 
 export default Vue.extend({
   name: 'BrowseLibraries',
   components: {
+    LibrariesActionsMenu,
     AlphabeticalNavigation,
     LibraryActionsMenu,
     EmptyState,
@@ -631,6 +634,7 @@ export default Vue.extend({
     },
     async loadLibrary(libraryId: string) {
       this.library = this.getLibraryLazy(libraryId)
+      if (this.library != undefined) document.title = `Komga - ${this.library.name}`
 
       await this.loadPage(libraryId, this.page, this.sortActive, this.symbolCondition)
     },
@@ -746,10 +750,11 @@ export default Vue.extend({
       this.$store.dispatch('dialogAddSeriesToCollection', this.selectedSeries.map(s => s.id))
     },
     async addToReadList() {
-      const books = await Promise.all(this.selectedSeries.map(s => this.$komgaBooks.getBooksList({
-        condition: new SearchConditionSeriesId(new SearchOperatorIs(s.id)),
-      } as BookSearch)))
-      this.$store.dispatch('dialogAddBooksToReadList', books.map(b => b.content[0].id))
+      const conditions = this.selectedSeries.map(s => new SearchConditionSeriesId(new SearchOperatorIs(s.id)))
+      const books = await this.$komgaBooks.getBooksList({
+        condition: new SearchConditionAnyOfBook(conditions),
+      } as BookSearch, {unpaged: true})
+      this.$store.dispatch('dialogAddBooksToReadList', books.content.map(b => b.id))
     },
     async editSingleSeries(series: SeriesDto) {
       if (series.oneshot) {

@@ -249,7 +249,7 @@
 
               <v-row v-if="book.metadata.summary">
                 <v-col>
-                  <read-more>{{ book.metadata.summary }}</read-more>
+                  <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
                 </v-col>
               </v-row>
             </template>
@@ -295,7 +295,7 @@
 
         <v-row v-if="book.metadata.summary">
           <v-col>
-            <read-more>{{ book.metadata.summary }}</read-more>
+            <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
           </v-col>
         </v-row>
       </template>
@@ -451,6 +451,7 @@
           <v-chip
             v-for="(link, i) in book.metadata.links"
             :href="link.url"
+            rel="noreferrer"
             target="_blank"
             class="me-2"
             label
@@ -494,6 +495,28 @@
       <v-row class="align-center text-caption">
         <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.file') }}</v-col>
         <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{ book.url }}</v-col>
+      </v-row>
+
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_created') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.created))
+          }}
+        </v-col>
+      </v-row>
+
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_modified') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.lastModified))
+          }}
+        </v-col>
       </v-row>
 
     </v-container>
@@ -552,7 +575,8 @@ import {
   SearchConditionAgeRating,
   SearchConditionGenre,
   SearchConditionLanguage,
-  SearchConditionPublisher, SearchConditionSeriesId,
+  SearchConditionPublisher,
+  SearchConditionSeriesId,
   SearchConditionTag,
   SearchOperatorIs,
 } from '@/types/komga-search'
@@ -585,6 +609,7 @@ export default Vue.extend({
       contextName: '',
       collections: [] as CollectionDto[],
       readLists: [] as ReadListDto[],
+      readMore: false,
     }
   },
   async created() {
@@ -626,6 +651,7 @@ export default Vue.extend({
   },
   async beforeRouteUpdate(to, from, next) {
     if (to.params.seriesId !== from.params.seriesId) {
+      this.readMore = false
       this.loadSeries(to.params.seriesId)
     }
 
