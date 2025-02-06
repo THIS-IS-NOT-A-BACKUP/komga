@@ -2,31 +2,58 @@ import {AxiosInstance} from 'axios'
 import _Vue from 'vue'
 import KomgaSettingsService from '@/services/komga-settings.service'
 import {Module} from 'vuex'
-import {LibraryDto} from '@/types/komga-libraries'
-import {CLIENT_SETTING, ClientSettingDto} from '@/types/komga-clientsettings'
+import {
+  CLIENT_SETTING,
+  ClientSettingDto,
+  ClientSettingLibrary,
+  ClientSettingLibraryUpdate,
+  ClientSettingUserUpdateDto,
+} from '@/types/komga-clientsettings'
 
-let service = KomgaSettingsService
+let service: KomgaSettingsService
 
 const vuexModule: Module<any, any> = {
   state: {
-    clientSettings: [] as ClientSettingDto[],
+    clientSettingsGlobal: {} as Record<string, ClientSettingDto>,
+    clientSettingsUser: {} as Record<string, ClientSettingDto>,
   },
   getters: {
-    getClientSettingByKey: (state) => (key: string) => {
-      return state.clientSettings.find((it: ClientSettingDto) => it.key === key)
+    getClientSettings(state): Record<string, ClientSettingDto> {
+      return {...state.clientSettingsGlobal, ...state.clientSettingsUser}
     },
-    getClientSettingPosterStretch(state): boolean {
-      return state.clientSettings.find((it: ClientSettingDto) => it.key === CLIENT_SETTING.WEBUI_POSTER_STRETCH)?.value === 'true'
+    getClientSettingsLibraries(state): Record<string, ClientSettingLibrary> {
+      let settings: Record<string, ClientSettingLibrary> = {}
+      try {
+        settings = JSON.parse(state.clientSettingsUser[CLIENT_SETTING.WEBUI_LIBRARIES]?.value)
+      } catch (e) {
+      }
+      return settings
     },
   },
   mutations: {
-    setClientSettings(state, settings) {
-      state.clientSettings = settings
+    setClientSettingsGlobal(state, settings) {
+      state.clientSettingsGlobal = settings
+    },
+    setClientSettingsUser(state, settings) {
+      state.clientSettingsUser = settings
     },
   },
   actions: {
-    async getClientSettings({commit}) {
-      commit('setClientSettings', await service.getClientSettings())
+    async getClientSettingsGlobal({commit}) {
+      commit('setClientSettingsGlobal', await service.getClientSettingsGlobal())
+    },
+    async getClientSettingsUser({commit}) {
+      commit('setClientSettingsUser', await service.getClientSettingsUser())
+    },
+    async updateLibrarySetting({dispatch, getters}, update: ClientSettingLibraryUpdate) {
+      const all = getters.getClientSettingsLibraries
+      all[update.libraryId] = Object.assign({}, all[update.libraryId], update.patch)
+      const newSettings = {} as Record<string, ClientSettingUserUpdateDto>
+      newSettings[CLIENT_SETTING.WEBUI_LIBRARIES] = {
+        value: JSON.stringify(all),
+      }
+      await service.updateClientSettingUser(newSettings)
+      dispatch('getClientSettingsUser')
     },
   },
 }

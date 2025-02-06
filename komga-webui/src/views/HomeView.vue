@@ -80,7 +80,8 @@
           </v-list-item-action>
         </v-list-item>
 
-        <v-list-item v-for="(l, index) in libraries"
+        <!--   PINNED LIBRARIES     -->
+        <v-list-item v-for="(l, index) in librariesPinned"
                      :key="index"
                      :to="{name:'libraries', params: {libraryId: l.id}}"
         >
@@ -94,10 +95,37 @@
             >{{ $t('common.unavailable') }}
             </v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdmin" class="ma-0">
+          <v-list-item-action class="ma-0">
             <library-actions-menu :library="l"/>
           </v-list-item-action>
         </v-list-item>
+
+        <!--   UNPINNED LIBRARIES     -->
+        <v-list-group no-action
+                      sub-group
+                      v-if="librariesUnpinned.length > 0"
+        >
+          <template v-slot:activator>
+            <v-list-item-title>{{ $t('common.more') }}</v-list-item-title>
+          </template>
+
+          <v-list-item v-for="(l, index) in librariesUnpinned"
+                       :key="index"
+                       :to="{name:'libraries', params: {libraryId: l.id}}"
+          >
+            <v-list-item-content>
+              <v-list-item-title>{{ l.name }}</v-list-item-title>
+              <v-list-item-subtitle
+                v-if="l.unavailable"
+                class="error--text caption"
+              >{{ $t('common.unavailable') }}
+              </v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-action class="ma-0">
+              <library-actions-menu :library="l"/>
+            </v-list-item-action>
+          </v-list-item>
+        </v-list-group>
 
         <!--   IMPORT     -->
         <v-list-group v-if="isAdmin"
@@ -258,6 +286,10 @@
             <v-list-item-title>{{ $t('users.api_keys') }}</v-list-item-title>
           </v-list-item>
 
+          <v-list-item :to="{name: 'account-settings-ui'}">
+            <v-list-item-title>{{ $t('common.ui') }}</v-list-item-title>
+          </v-list-item>
+
           <v-list-item :to="{name: 'account-activity'}">
             <v-list-item-title>{{ $t('users.authentication_activity') }}</v-list-item-title>
           </v-list-item>
@@ -396,7 +428,13 @@ export default Vue.extend({
       return this.$store.state.komgaSse.taskCountByType
     },
     libraries(): LibraryDto[] {
-      return this.$store.state.komgaLibraries.libraries
+      return this.$store.getters.getLibraries
+    },
+    librariesPinned(): LibraryDto[] {
+      return this.$store.getters.getLibrariesPinned
+    },
+    librariesUnpinned(): LibraryDto[] {
+      return this.$store.getters.getLibrariesUnpinned
     },
     isAdmin(): boolean {
       return this.$store.getters.meAdmin
