@@ -53,12 +53,16 @@ import org.springdoc.core.customizers.OperationCustomizer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.security.access.prepost.PreAuthorize
 
 @Configuration
 class OpenApiConfiguration(
   @Value("\${application.version}") private val appVersion: String,
+  env: Environment,
 ) {
+  private val generateOpenApi = env.activeProfiles.contains("generate-openapi")
+
   @Bean
   fun openApi(): OpenAPI {
     val logoutOperation =
@@ -94,14 +98,14 @@ class OpenApiConfiguration(
 
             Upon successful authentication, a session is created, and can be reused.
 
-            - By default, a `SESSION` cookie is set via `Set-Cookie` response header. This works well for browsers and clients that can handle cookies.
+            - By default, a `KOMGA-SESSION` cookie is set via `Set-Cookie` response header. This works well for browsers and clients that can handle cookies.
             - If you specify a header `X-Auth-Token` during authentication, the session ID will be returned via this same header. You can then pass that header again for subsequent requests to reuse the session.
 
             If you need to set the session cookie later on, you can call `/api/v1/login/set-cookie` with `X-Auth-Token`. The response will contain the `Set-Cookie` header.
 
             ## Remember Me
 
-            During authentication, if a request parameter `remember-me` is passed and set to `true`, the server will also return a `remember-me` cookie. This cookie will be used to login automatically even if the session has expired.
+            During authentication, if a request parameter `remember-me` is passed and set to `true`, the server will also return a `komga-remember-me` cookie. This cookie will be used to login automatically even if the session has expired.
 
             ## Logout
 
@@ -137,26 +141,29 @@ class OpenApiConfiguration(
         ),
       ).tags(tags)
       .extensions(mapOf("x-tagGroups" to tagGroups))
-      .servers(
-        listOf(
-          Server()
-            .url("https://demo.komga.org")
-            .description("Demo server"),
-          Server()
-            .url("http://localhost:{port}")
-            .description("Local development server")
-            .variables(
-              ServerVariables()
-                .addServerVariable(
-                  "port",
-                  ServerVariable()
-                    .addEnumItem("8080")
-                    .addEnumItem("25600")
-                    ._default("25600"),
+      .apply {
+        if (generateOpenApi)
+          servers(
+            listOf(
+              Server()
+                .url("https://demo.komga.org")
+                .description("Demo server"),
+              Server()
+                .url("http://localhost:{port}")
+                .description("Local development server")
+                .variables(
+                  ServerVariables()
+                    .addServerVariable(
+                      "port",
+                      ServerVariable()
+                        .addEnumItem("8080")
+                        .addEnumItem("25600")
+                        ._default("25600"),
+                    ),
                 ),
             ),
-        ),
-      ).path(
+          )
+      }.path(
         "/api/logout",
         PathItem()
           .summary("Logout current session")
