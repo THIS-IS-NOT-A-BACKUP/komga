@@ -76,7 +76,7 @@ dependencies {
     implementation("org.apache.lucene:lucene-backward-codecs:$luceneVersion")
   }
 
-  implementation("com.ibm.icu:icu4j:76.1")
+  implementation("com.ibm.icu:icu4j:77.1")
 
   implementation("com.appmattus.crypto:cryptohash:0.10.1")
 
@@ -265,7 +265,7 @@ val sqliteMigrationDirs =
       ),
   )
 
-task("flywayMigrateMain", FlywayMigrateTask::class) {
+tasks.register("flywayMigrateMain", FlywayMigrateTask::class) {
   val id = "main"
   url = sqliteUrls[id]
   locations = arrayOf("classpath:db/migration/sqlite")
@@ -287,7 +287,7 @@ task("flywayMigrateMain", FlywayMigrateTask::class) {
   mixed = true
 }
 
-task("flywayMigrateTasks", FlywayMigrateTask::class) {
+tasks.register("flywayMigrateTasks", FlywayMigrateTask::class) {
   val id = "tasks"
   url = sqliteUrls[id]
   locations = arrayOf("classpath:tasks/migration/sqlite")

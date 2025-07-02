@@ -14,7 +14,7 @@ plugins {
   }
   id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
   id("com.github.ben-manes.versions") version "0.51.0"
-  id("org.jreleaser") version "1.10.0"
+  id("org.jreleaser") version "1.19.0"
 }
 
 fun isNonStable(version: String): Boolean {
@@ -49,7 +49,7 @@ allprojects {
 }
 
 tasks.wrapper {
-  gradleVersion = "8.11.1"
+  gradleVersion = "8.14.2"
   distributionType = Wrapper.DistributionType.ALL
 }
 
