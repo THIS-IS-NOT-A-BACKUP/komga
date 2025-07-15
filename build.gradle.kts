@@ -7,13 +7,13 @@ import kotlin.io.path.exists
 
 plugins {
   run {
-    val kotlinVersion = "1.9.21"
+    val kotlinVersion = "2.2.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
     kotlin("kapt") version kotlinVersion
   }
-  id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
-  id("com.github.ben-manes.versions") version "0.51.0"
+  id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
+  id("com.github.ben-manes.versions") version "0.52.0"
   id("org.jreleaser") version "1.19.0"
 }
 
@@ -44,12 +44,16 @@ allprojects {
   }
 
   configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-    version = "1.5.0"
+    version = "1.6.0"
+    filter {
+      exclude("**/generated-src/**")
+      exclude("**/generated/**")
+    }
   }
 }
 
 tasks.wrapper {
-  gradleVersion = "8.14.2"
+  gradleVersion = "8.14.3"
   distributionType = Wrapper.DistributionType.ALL
 }
 
