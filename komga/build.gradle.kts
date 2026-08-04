@@ -1,5 +1,4 @@
 import nu.studer.gradle.jooq.JooqGenerate
-import org.apache.tools.ant.taskdefs.condition.Os
 import org.flywaydb.gradle.task.FlywayMigrateTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.util.prefixIfNot
@@ -63,27 +62,27 @@ dependencies {
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
 
-  implementation("commons-io:commons-io:2.19.0")
+  implementation("commons-io:commons-io:2.22.0")
   implementation("org.apache.commons:commons-lang3:3.18.0")
-  implementation("commons-validator:commons-validator:1.10.0")
+  implementation("commons-validator:commons-validator:1.11.0")
 
   implementation("org.apache.lucene:lucene-core:${libs.versions.lucene.get()}")
   implementation("org.apache.lucene:lucene-analysis-common:${libs.versions.lucene.get()}")
   implementation("org.apache.lucene:lucene-queryparser:${libs.versions.lucene.get()}")
   implementation("org.apache.lucene:lucene-backward-codecs:${libs.versions.lucene.get()}")
 
-  implementation("com.ibm.icu:icu4j:77.1")
+  implementation("com.ibm.icu:icu4j:78.3")
 
   implementation("com.appmattus.crypto:cryptohash:1.0.2")
 
   implementation("org.apache.tika:tika-core:2.9.1")
-  implementation("org.apache.commons:commons-compress:1.27.1")
-  implementation("com.github.junrar:junrar:8.0.0")
+  implementation("org.apache.commons:commons-compress:1.28.0")
+  implementation("com.github.junrar:junrar:8.1.0")
   implementation("org.apache.pdfbox:pdfbox:3.0.5")
   implementation("net.grey-panther:natural-comparator:1.1")
   implementation("org.jsoup:jsoup:1.21.1")
 
-  implementation("net.coobird:thumbnailator:0.4.20")
+  implementation("net.coobird:thumbnailator:0.4.21")
   runtimeOnly("com.twelvemonkeys.imageio:imageio-jpeg:${libs.versions.twelvemonkeys.get()}")
   runtimeOnly("com.twelvemonkeys.imageio:imageio-tiff:${libs.versions.twelvemonkeys.get()}")
   runtimeOnly("com.twelvemonkeys.imageio:imageio-webp:${libs.versions.twelvemonkeys.get()}")
@@ -95,7 +94,7 @@ dependencies {
   runtimeOnly("org.apache.pdfbox:jbig2-imageio:3.0.4")
 
   // barcode scanning
-  implementation("com.google.zxing:core:3.5.3")
+  implementation("com.google.zxing:core:3.5.4")
 
   implementation("com.jakewharton.byteunits:byteunits:0.9.1")
 
@@ -114,11 +113,11 @@ dependencies {
     exclude(module = "mockito-core")
   }
   testImplementation("org.springframework.security:spring-security-test")
-  testImplementation("com.ninja-squad:springmockk:4.0.2")
+  testImplementation("com.ninja-squad:springmockk:4.0.2") // v5 needs Spring Framework v7
   testImplementation("io.mockk:mockk:1.14.4")
   testImplementation("com.google.jimfs:jimfs:1.3.1")
 
-  testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+  testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 
   benchmarkImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   benchmarkImplementation("org.openjdk.jmh:jmh-core:1.37")
@@ -142,6 +141,7 @@ kotlin {
 }
 
 val webui = "$rootDir/komga-webui"
+val nextui = "$rootDir/next-ui"
 tasks {
   withType<JavaCompile> {
     sourceCompatibility = "17"
@@ -164,50 +164,17 @@ tasks {
     enabled = true
   }
 
-  register<Exec>("npmInstall") {
+  register<Sync>("webuiCopyDist") {
+    description = "Copies the WebUI build into resources/public"
     group = "web"
-    workingDir(webui)
-    inputs.file("$webui/package.json")
-    outputs.dir("$webui/node_modules")
-    commandLine(
-      if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        "npm.cmd"
-      } else {
-        "npm"
-      },
-      "install",
-    )
-  }
-
-  register<Exec>("npmBuild") {
-    group = "web"
-    dependsOn("npmInstall")
-    workingDir(webui)
-    inputs.dir(webui)
-    outputs.dir("$webui/dist")
-    commandLine(
-      if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        "npm.cmd"
-      } else {
-        "npm"
-      },
-      "run",
-      "build",
-    )
-  }
-
-  // copy the webui build into public
-  register<Sync>("copyWebDist") {
-    group = "web"
-    dependsOn("npmBuild")
     from("$webui/dist/")
     into("$projectDir/src/main/resources/public/")
   }
 
-  // modifies index.html to inject ThymeLeaf th: tags
-  register<Copy>("prepareThymeLeaf") {
+  register<Copy>("webuiCopyIndex") {
+    description = "Copies the WebUI index.html into resources/public and injects Thymeleaf tags"
     group = "web"
-    dependsOn("copyWebDist")
+    dependsOn("webuiCopyDist")
     from("$webui/dist/index.html")
     into("$projectDir/src/main/resources/public/")
     filter { line ->
@@ -217,11 +184,35 @@ tasks {
     }
   }
 
+  register<Copy>("nextuiCopyDist") {
+    description = "Copies the nextUI build into resources/public"
+    group = "web"
+    from("$nextui/dist/")
+    into("$projectDir/src/main/resources/public/")
+    excludes.add("index.html") // will be copied by 'nextuiCopyIndex'
+    mustRunAfter(getByName("webuiCopyDist"))
+  }
+
+  // modifies index.html to inject ThymeLeaf th: tags
+  register<Copy>("nextuiCopyIndex") {
+    description = "Copies the nextUI index.html into resources/public/index-next.html and injects Thymeleaf tags"
+    group = "web"
+    dependsOn("nextuiCopyDist")
+    from("$nextui/dist/index.html")
+    into("$projectDir/src/main/resources/public/")
+    filter { line ->
+      line.replace("((?:src|content|href)=\")([\\w]*/.*?)(\")".toRegex()) {
+        it.groups[0]?.value + " th:" + it.groups[1]?.value + "@{" + it.groups[2]?.value?.prefixIfNot("/") + "}" + it.groups[3]?.value
+      }
+    }
+    rename("index.html", "index-next.html")
+  }
+
   withType<ProcessResources> {
     filesMatching("application*.yml") {
       expand(project.properties)
     }
-    mustRunAfter(getByName("prepareThymeLeaf"))
+    mustRunAfter(getByName("webuiCopyIndex"), getByName("nextuiCopyIndex"))
   }
 
   register<Test>("benchmark") {
