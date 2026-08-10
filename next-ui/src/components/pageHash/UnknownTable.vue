@@ -14,6 +14,7 @@
     show-select
     return-object
     item-value="hash"
+    :item-selectable="canSelect"
     multi-sort
     mobile-breakpoint="md"
     @update:options="updateOptions"
@@ -125,7 +126,7 @@
         variant="outlined"
         divided
         rounded="lg"
-        :disabled="value"
+        :disabled="!!value"
         @update:model-value="(v) => updateHashAction(item, v)"
       >
         <v-btn
@@ -133,7 +134,6 @@
           size="small"
           icon="i-mdi:robot"
           value="DELETE_AUTO"
-          :loading="value === 'DELETE_AUTO'"
           color="success"
           @click.stop
         />
@@ -142,7 +142,6 @@
           size="small"
           icon="i-mdi:hand-back-right"
           value="DELETE_MANUAL"
-          :loading="value === 'DELETE_MANUAL'"
           color="warning"
           @click.stop
         />
@@ -151,7 +150,6 @@
           size="small"
           icon="i-mdi:cancel"
           value="IGNORE"
-          :loading="value === 'IGNORE'"
           color=""
           @click.stop
         />
@@ -271,6 +269,10 @@ const { data, isLoading, error } = useQuery(() =>
     ...pageRequest.value,
   }),
 )
+
+function canSelect(item: PageHashUnknownDto): boolean {
+  return !getPageHashAction(item)
+}
 
 function updateOptions({
   page,
