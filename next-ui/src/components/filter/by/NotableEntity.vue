@@ -15,38 +15,38 @@
 
 <script setup lang="ts">
 import { useInfiniteQuery, useQuery } from '@pinia/colada'
-import { authorsNamesQuery, authorsNamesQueryInfinite } from '@/colada/referential'
+import { notableEntitiesNamesQuery, notableEntitiesNamesQueryInfinite } from '@/colada/referential'
 import { PageRequest } from '@/types/PageRequest'
 import * as v from 'valibot'
-import { type AnyAll, filterKeys, filterMessages, SchemaAuthor } from '@/types/filter'
+import { type AnyAll, filterKeys, filterMessages, SchemaNotableEntity } from '@/types/filter'
 import type { ItemType } from '@/components/filter/List.vue'
 import { refDebounced } from '@vueuse/core'
 import { useIntl } from 'vue-intl'
-import { CONTRIBUTOR_ANYROLE } from '@/types/referential'
+import { NOTABLE_ENTITY_ANYKIND } from '@/types/referential/notableEntity'
 
-type Author = v.InferOutput<typeof SchemaAuthor>
+type NotableEntity = v.InferOutput<typeof SchemaNotableEntity>
 
 const intl = useIntl()
 
-const model = defineModel<Author[]>({ default: () => [] })
+const model = defineModel<NotableEntity[]>({ default: () => [] })
 const modelMode = defineModel<AnyAll>('mode', { default: 'anyOf' })
 
 const search = ref()
 const searchDebounced = refDebounced(search, 500)
 
-const { role } = defineProps<{
-  role?: string
+const { kind } = defineProps<{
+  kind?: string
 }>()
 
 const filterContext = inject(filterKeys.context, {})
 
 const apiQuery = computed(() => ({
   ...toValue(filterContext),
-  ...(role === CONTRIBUTOR_ANYROLE ? {} : { role: role }),
+  ...(kind === NOTABLE_ENTITY_ANYKIND ? {} : { kind: kind }),
 }))
 
 const { data: searchItems, isLoading: searchLoading } = useQuery(() => ({
-  ...authorsNamesQuery({
+  ...notableEntitiesNamesQuery({
     pageRequest: PageRequest.Unpaged(),
     search: searchDebounced.value,
     ...apiQuery.value,
@@ -56,7 +56,7 @@ const { data: searchItems, isLoading: searchLoading } = useQuery(() => ({
 const searchResults = computed(() => searchItems.value?.content?.map((it) => toItemType(it)))
 
 const { data: infiniteData, loadNextPage } = useInfiniteQuery(() =>
-  authorsNamesQueryInfinite(apiQuery.value),
+  notableEntitiesNamesQueryInfinite(apiQuery.value),
 )
 const infiniteItems = computed(() => {
   const itemTypes = (infiniteData.value?.pages.flatMap((it) => it?.content ?? []) ?? []).map((it) =>
@@ -74,15 +74,13 @@ const infiniteItems = computed(() => {
 
 const hideSearch = computed(() => (infiniteData.value?.pages?.[0]?.totalElements || 0) < 10)
 
-function toItemType(authorName: string): ItemType<Author> {
+function toItemType(notableEntityName: string): ItemType<NotableEntity> {
   return {
-    title: authorName,
-    value: { i: 'i', v: authorName },
-    valueExclude: { i: 'e', v: authorName },
+    title: notableEntityName,
+    value: { i: 'i', v: notableEntityName },
+    valueExclude: { i: 'e', v: notableEntityName },
   }
 }
 </script>
-
-<script lang="ts"></script>
 
 <style scoped></style>

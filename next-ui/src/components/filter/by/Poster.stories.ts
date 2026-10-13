@@ -1,22 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
-import Author from './Author.vue'
+import Poster from './Poster.vue'
 import { fn } from 'storybook/test'
 
 const meta = {
-  component: Author,
+  component: Poster,
   render: (args: object) => ({
-    components: { Author },
+    components: { Poster },
     setup() {
       return { args }
     },
-    template: '<Author v-model="args.modelValue"/>',
+    template: '<Poster v-model="args.modelValue"/>',
   }),
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     docs: {
       description: {
-        component: 'Author filter.',
+        component: 'Poster filter.',
       },
     },
   },
@@ -24,7 +24,7 @@ const meta = {
     'onUpdate:modelValue': fn(),
     modelValue: [],
   },
-} satisfies Meta<typeof Author>
+} satisfies Meta<typeof Poster>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -33,30 +33,11 @@ export const Default: Story = {
   args: {},
 }
 
-export const Writer: Story = {
-  args: {
-    role: 'writer',
-  },
-}
-
-export const NoData: Story = {
-  args: {
-    role: 'nodata',
-  },
-}
-
 export const InitialValue: Story = {
   args: {
     modelValue: [
-      { i: 'e', v: 'Author 2 (inker)' },
-      { i: 'i', v: 'Author 3 (colorist)' },
-      { i: 'i', v: 'Author 0 (writer)' },
+      { i: 'i', v: ['GENERATED', true] },
+      { i: 'e', v: ['USER_UPLOADED', false] },
     ],
-  },
-}
-
-export const InitialValueOutsideShown: Story = {
-  args: {
-    modelValue: [{ i: 'i', v: 'Author 100 (letterer)' }],
   },
 }
